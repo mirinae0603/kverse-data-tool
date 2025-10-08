@@ -1,10 +1,12 @@
 // components/ImageDropdowns.tsx
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SafeImage } from '@/components/ui/safe-image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageZoom } from '@/components/ui/shadcn-io/image-zoom';
 import { Spinner } from '@/components/ui/shadcn-io/spinner';
+import { useLabelled } from '@/context/LabelledNavContext';
 import React, { useEffect, useState } from 'react';
 
 
@@ -24,6 +26,7 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
     const [images, setImages] = useState<Image[]>([]);
     const [options, setOptions] = useState<string[]>([]);
     const [selectedOptions, setSelectedOptions] = useState<{ [imageId: string]: string }>({});
+    const [customClasses,setCustomClasses]= useState<{[imageId:string]:string}>({});
     const [loading, setLoading] = useState(true);
 
     // Simulate fetching from API
@@ -162,7 +165,13 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {mode === "unlabelled" && <Button onClick={() => handleSave(image.id)} disabled={!selectedOptions[image.id] || image.isLabelled}>Save</Button>}
+                            <Input 
+                            type="text"
+                            placeholder="Enter a custom class"
+                            value={customClasses[image.id] || ''}
+                            onChange={(e)=>setCustomClasses(prev=>({...prev,[image.id]:e.target.value}))}
+                            />
+                            {mode === "unlabelled" && <Button onClick={() => handleSave(image.id)} disabled={(!selectedOptions[image.id] && !customClasses[image.id]) || image.isLabelled}>Save</Button>}
                         </div>
 
                     </div>

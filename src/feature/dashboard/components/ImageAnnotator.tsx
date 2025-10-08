@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import ReactCrop, { type Crop } from 'react-image-crop';
+import ReactCrop, { centerCrop, makeAspectCrop, type Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { CircleX, ClosedCaption } from 'lucide-react';
 import { Spinner } from '@/components/ui/shadcn-io/spinner';
+import { SafeImage } from '@/components/ui/safe-image';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type CroppedItem = {
     src: string;
@@ -20,13 +22,35 @@ type ImageItem = {
 
 const LABEL_OPTIONS = ['Person', 'Car', 'Animal', 'Other'];
 
+function centerAspectCrop(
+    mediaWidth: number,
+    mediaHeight: number,
+    aspect: number,
+) {
+    return centerCrop(
+        makeAspectCrop(
+            {
+                unit: '%',
+                width: 90,
+            },
+            aspect,
+            mediaWidth,
+            mediaHeight,
+        ),
+        mediaWidth,
+        mediaHeight,
+    )
+}
+
+
 const ImageCropAnnotator: React.FC = () => {
     const [images, setImages] = useState<ImageItem[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [crop, setCrop] = useState<Crop>({ unit: '%', width: 30, height: 30, x: 0, y: 0 });
+    const [crop, setCrop] = useState<Crop>();
     const [croppedImagesMap, setCroppedImagesMap] = useState<Record<string, CroppedItem[]>>({});
     const [selectedLabel, setSelectedLabel] = useState('');
     const [customLabel, setCustomLabel] = useState('');
+    const [isLoadedImage, setIsLoadedImage] = useState(false);
     const imageRef = useRef<HTMLImageElement | null>(null);
 
     // Fetch images (dummy data for now)
@@ -35,7 +59,7 @@ const ImageCropAnnotator: React.FC = () => {
             // Simulate API call
             const fetchedImages: ImageItem[] = Array.from({ length: 5 }, (_, i) => ({
                 id: (i + 1).toString(),
-                url: `https://picsum.photos/800/500?random=${i + 1}`,
+                url: `https://picsum.photos/1920/1080?random=${i + 1}`,
             }));
             setImages(fetchedImages);
         };
@@ -45,47 +69,72 @@ const ImageCropAnnotator: React.FC = () => {
     const currentImage = images[currentIndex];
 
     // Generate cropped image using relative coordinates
-    const makeClientCrop = useCallback(async (crop: Crop) => {
-        if (imageRef.current && crop.width && crop.height) {
+    const makeClientCrop = useCallback(
+        async (crop: Crop) => {
+            if (!imageRef.current || !crop.width || !crop.height) return null;
+
             const img = imageRef.current;
             const canvas = document.createElement('canvas');
 
-            // Calculate absolute crop size from relative %
-            const scaleX = img.naturalWidth / 100;
-            const scaleY = img.naturalHeight / 100;
+            // Convert percentage to absolute pixels
+            const cropX = (crop.x / 100) * img.naturalWidth;
+            const cropY = (crop.y / 100) * img.naturalHeight;
+            const cropWidth = (crop.width / 100) * img.naturalWidth;
+            const cropHeight = (crop.height / 100) * img.naturalHeight;
 
-            const cropWidth = crop.width * scaleX;
-            const cropHeight = crop.height * scaleY;
+            console.log({ cropX, cropY, cropWidth, cropHeight });
 
-            canvas.width = cropWidth;
-            canvas.height = cropHeight;
+            // Set canvas to crop size
+            canvas.width = Math.round(cropWidth);
+            canvas.height = Math.round(cropHeight);
 
             const ctx = canvas.getContext('2d');
             if (!ctx) return null;
 
-            // Draw the cropped portion of the image directly
+            // Draw the cropped image
             ctx.drawImage(
                 img,
-                crop.x * scaleX,
-                crop.y * scaleY,
-                cropWidth,
-                cropHeight,
+                Math.round(cropX),
+                Math.round(cropY),
+                Math.round(cropWidth),
+                Math.round(cropHeight),
                 0,
                 0,
-                cropWidth,
-                cropHeight
+                Math.round(cropWidth),
+                Math.round(cropHeight)
             );
 
-            // Return as PNG to preserve transparency
+            // Return base64 image (PNG)
             return canvas.toDataURL('image/png');
-        }
-    }, []);
+        },
+        []
+    );
 
     const handleAddCrop = async () => {
-        const croppedSrc = await makeClientCrop(crop);
+        if (!crop) {
+            return;
+        }
+        if (!imageRef.current) return;
+
+        const img = imageRef.current;
+
+        console.log("base crop", crop);
+
+        const cropValue: Crop =
+            crop.unit === '%'
+                ? crop
+                : {
+                    unit: '%',
+                    x: (crop.x! / img.width) * 100,
+                    y: (crop.y! / img.height) * 100,
+                    width: (crop.width! / img.width) * 100,
+                    height: (crop.height! / img.height) * 100,
+                };
+
+        const croppedSrc = await makeClientCrop(cropValue);
         if (!croppedSrc || !currentImage) return;
         const label = customLabel || selectedLabel;
-        const newCropped: CroppedItem = { src: croppedSrc, label, relativeCrop: crop };
+        const newCropped: CroppedItem = { src: croppedSrc, label, relativeCrop: cropValue };
         setCroppedImagesMap((prev) => ({
             ...prev,
             [currentImage.id]: prev[currentImage.id] ? [...prev[currentImage.id], newCropped] : [newCropped],
@@ -100,19 +149,7 @@ const ImageCropAnnotator: React.FC = () => {
     };
 
     const handleCropChange = (newCrop: Crop) => {
-        if (!imageRef.current) return;
-
-        const img = imageRef.current;
-
-        const cropInPercent: Crop = {
-            unit: "%",
-            x: (newCrop.x! / img.naturalWidth) * 100,
-            y: (newCrop.y! / img.naturalHeight) * 100,
-            width: (newCrop.width! / img.naturalWidth) * 100,
-            height: (newCrop.height! / img.naturalHeight) * 100,
-        };
-
-        setCrop(cropInPercent);
+        setCrop(newCrop);
     };
 
     const handleCropDelete = (cropSrc: string) => {
@@ -120,6 +157,18 @@ const ImageCropAnnotator: React.FC = () => {
             ...prev,
             [currentImage.id]: (prev[currentImage.id] || []).filter(data => data.src !== cropSrc),
         }));
+    };
+
+    const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+        setCrop({
+            unit: '%',
+            width: 50, // initial width 50%
+            height: 50, // initial height 50%
+            x: 25, // center crop
+            y: 25,
+        });
+
+        setIsLoadedImage(true);
     };
 
     if (images.length === 0) return <div className="flex flex-col flex-1 justify-center items-center"><Spinner /></div>;
@@ -131,8 +180,9 @@ const ImageCropAnnotator: React.FC = () => {
                 {/* Left: main image with crop */}
                 <div className="w-full md:w-1/2 flex flex-col gap-2 items-center">
                     <ReactCrop crop={crop} onChange={(c) => handleCropChange(c)} ruleOfThirds>
-                        <img ref={imageRef} src={currentImage.url} alt="To crop" className="max-w-full max-h-full object-contain" crossOrigin="anonymous" />
+                        <img ref={imageRef} src={currentImage.url} alt="To crop" className="max-w-full max-h-full object-contain" crossOrigin="anonymous" onLoad={(e) => onImageLoad(e)} />
                     </ReactCrop>
+                    {!isLoadedImage && <Skeleton className="w-full h-full" />}
 
                     <div className="flex gap-2 mt-2">
                         <Select onValueChange={(v) => setSelectedLabel(v)} value={selectedLabel} disabled={!!customLabel}>
@@ -164,8 +214,8 @@ const ImageCropAnnotator: React.FC = () => {
                 <div className="w-full md:w-1/2 flex flex-col gap-2 overflow-y-auto h-auto md:max-h-[500px]">
                     {(croppedImagesMap[currentImage.id] || []).map((cropItem, idx) => (
                         <div key={idx} className="flex gap-2 border p-2 rounded shadow">
-                            <CircleX type='button' className="text-black" onClick={()=>handleCropDelete(cropItem.src)}/>
-                                <img src={cropItem.src} alt={`Crop ${idx}`} className="flex-1 w-full h-32 object-contain rounded" />
+                            <CircleX type='button' className="text-black" onClick={() => handleCropDelete(cropItem.src)} />
+                            <img src={cropItem.src} alt={`Crop ${idx}`} className="flex-1 w-full h-32 object-contain rounded" />
                             <Input
                                 className="flex-2"
                                 value={cropItem.label}

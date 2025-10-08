@@ -4,14 +4,18 @@ import * as React from "react"
 import {
   BookOpen,
   Bot,
+  Columns2,
   Command,
   Frame,
+  Image,
   LifeBuoy,
   Map,
   PieChart,
   Send,
   Settings2,
   SquareTerminal,
+  Tags,
+  Upload,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -27,6 +31,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useLabelled } from "@/context/LabelledNavContext"
 
 const data = {
   user: {
@@ -44,17 +49,23 @@ const data = {
       ],
     },
     {
-      title: "Labelling",
+      title: "Unlabelled",
+      url: "annotations/unlabelled",
+      icon: SquareTerminal,
+      isActive: true
+    },
+    {
+      title: "Labelled",
       url: "#",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "Unlabelled",
+          title: "Chapter",
           url: "annotations/unlabelled",
         },
         {
-          title: "Labeled",
+          title: "Index",
           url: "annotations/labelled",
         }
       ],
@@ -108,6 +119,44 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+
+  const {items:LabelledItems} = useLabelled();
+
+  const navMain = [
+    {
+      title: "Upload Files",
+      url: "upload-files",
+      icon: Upload,
+      items: [
+      ],
+    },
+    {
+      title: "Unlabelled",
+      url: "annotations/unlabelled",
+      icon: SquareTerminal,
+    },
+    {
+      title: "Labelled",
+      url: "#",
+      icon: Tags,
+      items: LabelledItems
+    },
+    {
+      title: "Markdown Viewer",
+      url: "/markdown-viewer",
+      icon: Columns2,
+      items: [
+      ],
+    },
+    {
+      title: "Image Annotations",
+      url: "/image-annotations",
+      icon: Image,
+      items: [
+      ],
+    },
+  ];
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -128,7 +177,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navMain} />
         {/* <NavProjects projects={data.projects} /> */}
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>

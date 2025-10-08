@@ -25,7 +25,6 @@ export function NavMain({
     title: string
     url: string
     icon: LucideIcon
-    isActive?: boolean
     items?: {
       title: string
       url: string
@@ -36,8 +35,8 @@ export function NavMain({
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => (
-          <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
+        {items.map((item) => {
+          return <Collapsible key={item.title} asChild>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={item.title}>
                 <Link to={item.url}>
@@ -70,7 +69,7 @@ export function NavMain({
               ) : null}
             </SidebarMenuItem>
           </Collapsible>
-        ))}
+        })}
       </SidebarMenu>
     </SidebarGroup>
   )

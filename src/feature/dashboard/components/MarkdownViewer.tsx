@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Response } from '@/components/ui/shadcn-io/ai/response';
 import { Spinner } from '@/components/ui/shadcn-io/spinner';
 import { SafeImage } from '@/components/ui/safe-image';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type MarkdownItem = {
     id: string;
@@ -17,6 +18,7 @@ const MarkdownViewer: React.FC = () => {
     const [currentMarkdown, setCurrentMarkdown] = useState('');
     const [loading, setLoading] = useState(true);
     const [isEditMode, setIsEditMode] = useState(true);
+    const [isImageLoaded, setIsImageLoaded] = useState(false);
 
     // Simulate fetching data
     useEffect(() => {
@@ -25,9 +27,9 @@ const MarkdownViewer: React.FC = () => {
             await new Promise((res) => setTimeout(res, 500));
 
             const data: MarkdownItem[] = [
-                { id: '1', imageUrl: 'https://picsum.photos/400?random=1', markdown: '# Markdown 1\nSome text here.',isSaved:false },
-                { id: '2', imageUrl: 'https://picsum.photos/400?random=2', markdown: '## Markdown 2\nAnother text here.',isSaved:false },
-                { id: '3', imageUrl: 'https://picsum.photos/400?random=3', markdown: '### Markdown 3\nMore text.',isSaved:false },
+                { id: '1', imageUrl: 'https://picsum.photos/400?random=1', markdown: '# Markdown 1\nSome text here.', isSaved: false },
+                { id: '2', imageUrl: 'https://picsum.photos/400?random=2', markdown: '## Markdown 2\nAnother text here.', isSaved: false },
+                { id: '3', imageUrl: 'https://picsum.photos/400?random=3', markdown: '### Markdown 3\nMore text.', isSaved: false },
             ];
 
             setItems(data);
@@ -50,6 +52,7 @@ const MarkdownViewer: React.FC = () => {
         handleSave();
         if (currentIndex < items.length - 1) {
             setCurrentIndex(currentIndex + 1);
+            setIsImageLoaded(false);
             setCurrentMarkdown(items[currentIndex + 1].markdown);
             setIsEditMode(true);
         } else {
@@ -60,12 +63,13 @@ const MarkdownViewer: React.FC = () => {
     const handlePrev = () => {
         if (currentIndex > 0) {
             setCurrentIndex(currentIndex - 1);
+            setIsImageLoaded(false);
             setCurrentMarkdown(items[currentIndex - 1].markdown);
             setIsEditMode(true);
         }
     };
-
-    if(loading) {
+    
+    if (loading) {
         return <div className="flex flex-col flex-1 justify-center items-center"><Spinner /></div>;
     }
 
@@ -76,11 +80,19 @@ const MarkdownViewer: React.FC = () => {
             {/* The flex container for image + markdown */}
             <div className="flex flex-1 gap-4">
                 {/* Left: Image */}
-                <div className="w-1/2 flex flex-col justify-center items-center">
+                <div className="w-1/2 relative flex flex-col justify-center items-center bg-gray-100 p-4 rounded-lg">
+                    {/* Skeleton placeholder */}
+                    {!isImageLoaded && (
+                        <Skeleton className="absolute inset-0 h-full w-full rounded shadow animate-pulse" />
+                    )}
+
+                    {/* Actual image */}
                     <img
                         src={currentItem.imageUrl}
                         alt={`Image ${currentItem.id}`}
-                        className="max-w-full max-h-full object-contain rounded shadow flex-1"
+                        onLoad={() => setIsImageLoaded(true)}
+                        className={`max-w-full max-h-full object-contain rounded shadow flex-1 transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'
+                            }`}
                     />
                 </div>
 
@@ -100,12 +112,12 @@ const MarkdownViewer: React.FC = () => {
                     <div className="flex flex-1 flex-col gap-2">
                         {isEditMode ? (
                             <textarea
-                                className="flex-1 w-full p-2 border rounded resize-none"
+                                className="flex-1 w-full p-2 border rounded-lg resize-none"
                                 value={currentMarkdown}
                                 onChange={(e) => setCurrentMarkdown(e.target.value)}
                             />
                         ) : (
-                            <div className="flex-1 border p-2 rounded overflow-auto">
+                            <div className="flex-1 border p-2 rounded-lg overflow-auto">
                                 <Response>{currentMarkdown}</Response>
                             </div>
                         )}
@@ -124,7 +136,6 @@ const MarkdownViewer: React.FC = () => {
                 </Button>
             </div>
         </div>
-
     );
 };
 
