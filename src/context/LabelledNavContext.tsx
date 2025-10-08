@@ -11,8 +11,8 @@ const LabelledContext = createContext<LabelledContextType | undefined>(undefined
 
 export const LabelledProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<NavItem[]>([
-    { title: "Chapter", url: "annotations/unlabelled" },
-    { title: "Index", url: "annotations/labelled" },
+    { title: "Chapter", url: "images/labelled?class=Chapter" },
+    { title: "Index", url: "images/labelled?class=Index" },
   ]);
 
   return (

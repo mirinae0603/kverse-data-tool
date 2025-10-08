@@ -8,6 +8,7 @@ import { ImageZoom } from '@/components/ui/shadcn-io/image-zoom';
 import { Spinner } from '@/components/ui/shadcn-io/spinner';
 import { useLabelled } from '@/context/LabelledNavContext';
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 
 // Types
@@ -23,6 +24,9 @@ type ImageMappingProps = {
 }
 
 const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
+    const [searchParams] = useSearchParams();
+    const labelClass = searchParams.get('class');
+    console.log(labelClass);
     const [images, setImages] = useState<Image[]>([]);
     const [options, setOptions] = useState<string[]>([]);
     const [selectedOptions, setSelectedOptions] = useState<{ [imageId: string]: string }>({});
@@ -106,16 +110,7 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
                         {/* <img src={image.url} alt={image.alt} style={{ width: '150px', height: 'auto' }} /> */}
                         <ImageZoom>
                             <div className="relative">
-                                {/* <img
-                                    src={image.url}
-                                    alt={image.alt}
-                                    className="h-auto w-full cursor-pointer"
-                                    style={{
-                                        maxWidth: '100%', // Ensure it’s responsive
-                                        height: 'auto',
-                                    }}
-                                /> */}
-                                <SafeImage src={image.url} alt={image.alt}/>
+                                <SafeImage src={image.url} alt={image.alt} height="h-80"/>
                                 {/* Conditionally render diagonal text */}
                                 {image.isLabelled && mode === 'unlabelled' && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

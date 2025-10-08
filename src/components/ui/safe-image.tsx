@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton"; // Shadcn skeleton placeholder
 import { ImageOff } from "lucide-react";
 
-export function SafeImage({ src, alt,className }: { src: string; alt?: string,className?:string }) {
+export function SafeImage({ src, alt,className,height='h-48' }: { src: string; alt?: string,className?:string,height?:string }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
   return (
-    <div className={`relative w-full h-full flex items-center justify-center bg-muted rounded overflow-hidden ${className}`}>
+    <div className={`relative w-full ${height} flex items-center justify-center bg-muted rounded overflow-hidden ${className}`}>
       {/* Placeholder skeleton while loading */}
       {!isLoaded && !hasError && <Skeleton className="w-full h-full" />}
 
@@ -27,7 +27,7 @@ export function SafeImage({ src, alt,className }: { src: string; alt?: string,cl
           crossOrigin="anonymous"
           onLoad={() => setIsLoaded(true)}
           onError={() => setHasError(true)}
-          className={`w-full h-full object-contain transition-opacity duration-300 ${
+          className={`w-full h-full transition-opacity duration-300 ${
             isLoaded ? "opacity-100" : "opacity-0"
           }`}
         />

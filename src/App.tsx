@@ -13,10 +13,10 @@ function App() {
     <>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Dashboard />}>
-            <Route path="/upload-files" element={<UploadFiles />} />
-            <Route path="/annotations/unlabelled" element={<ImageMapping mode="unlabelled" />}></Route>
-            <Route path="/annotations/labelled" element={<ImageMapping mode="labelled" />}></Route>
+          <Route element={<Dashboard />}>
+            <Route path="/" element={<UploadFiles />} />
+            <Route path="/images/unlabelled" element={<ImageMapping mode="unlabelled" />}></Route>
+            <Route path="/images/labelled" element={<ImageMapping mode="labelled" />}></Route>
             <Route path="/markdown-viewer" element={<MarkdownViewer />}></Route>
             <Route path="/image-annotations" element={<ImageCropAnnotator />}></Route>
           </Route>
