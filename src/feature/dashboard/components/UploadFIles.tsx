@@ -56,8 +56,12 @@ const UploadFiles = () => {
         formData.set("chapter",chapter);
         formData.set("grade",grade);
         try {
-            const data = await uploadFile(formData);
-            console.log("data",data);
+            await uploadFile(formData);
+            setBoard("");
+            setChapter("");
+            setGrade("");
+            setSubject("");
+            setFiles([]);
             toast.success('Files uploaded successfully!');
         } catch(error){
             console.error("Failed to get bot response",error);

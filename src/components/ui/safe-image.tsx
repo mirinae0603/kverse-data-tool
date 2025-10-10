@@ -24,7 +24,6 @@ export function SafeImage({ src, alt,className,height='h-48' }: { src: string; a
         <img
           src={src}
           alt={alt}
-          crossOrigin="anonymous"
           onLoad={() => setIsLoaded(true)}
           onError={() => setHasError(true)}
           className={`w-full h-full transition-opacity duration-300 ${

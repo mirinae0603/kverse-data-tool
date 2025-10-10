@@ -1,7 +1,7 @@
 // components/ImageDropdowns.tsx
+import { getImagesForLabelling, postLabelForImage } from '@/api/dashboard.api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SafeImage } from '@/components/ui/safe-image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageZoom } from '@/components/ui/shadcn-io/image-zoom';
@@ -9,7 +9,7 @@ import { Spinner } from '@/components/ui/shadcn-io/spinner';
 import { useLabelled } from '@/context/LabelledNavContext';
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-
+import { toast } from 'sonner';
 
 // Types
 type Image = {
@@ -25,52 +25,47 @@ type ImageMappingProps = {
 
 const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
     const [searchParams] = useSearchParams();
-    const labelClass = searchParams.get('class');
-    console.log(labelClass);
+    const labelClass = searchParams.get('class') ?? '';
     const [images, setImages] = useState<Image[]>([]);
     const [options, setOptions] = useState<string[]>([]);
     const [selectedOptions, setSelectedOptions] = useState<{ [imageId: string]: string }>({});
-    const [customClasses,setCustomClasses]= useState<{[imageId:string]:string}>({});
+    const [customClasses, setCustomClasses] = useState<{ [imageId: string]: string }>({});
     const [loading, setLoading] = useState(true);
+    const { fetchLabels } = useLabelled();
 
     // Simulate fetching from API
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
+            let fetchedImages: Image[] = [];
+            try {
+                const className = mode === 'unlabelled' ? "unclassified" : labelClass;
+                const data = await getImagesForLabelling(className);
+                data.map((img: string, ind: number) => fetchedImages.push({ id: `${ind}`, url: img, alt: `Image ${ind + 1}`, isLabelled: false }))
 
-            // Simulated API call (replace with real API calls)
-            let fetchedImages = [
-                { id: '1', url: 'https://picsum.photos/500?random=1', alt: 'Image 1' },
-                { id: '2', url: 'https://picsum.photos/500?random=1', alt: 'Image 2' },
-                { id: '3', url: 'https://picsum.photos/500?random=1', alt: 'Image 3' },
-                { id: '4', url: 'https://picsum.photos/500?random=1', alt: 'Image 1' },
-                { id: '5', url: 'https://picsum.photos/500?random=1', alt: 'Image 2' },
-                { id: '6', url: 'https://picsum.photos/500?random=1', alt: 'Image 3' },
-                { id: '7', url: 'https://picsum.photos/500?random=1', alt: 'Image 1' },
-                { id: '8', url: 'https://picsum.photos/500?random=1', alt: 'Image 2' },
-                { id: '9', url: 'https://picsum.photos/500?random=1', alt: 'Image 3' },
-            ];
+                const fetchedOptions: string[] = ['Chapter', 'Index'];
 
-            let fI: Image[] = fetchedImages.map(img => ({ ...img, isLabelled: false }))
+                // Set state
+                setImages(fetchedImages);
+                setOptions(fetchedOptions);
 
-            const fetchedOptions: string[] = ['Option 1', 'Option 2', 'Option 3'];
+                // Initialize selected options with first value
+                const initialSelections = fetchedImages.reduce((acc, img) => {
+                    acc[img.id] = "";
+                    return acc;
+                }, {} as { [key: string]: string });
 
-            // Set state
-            setImages(fI);
-            setOptions(fetchedOptions);
+                setSelectedOptions(initialSelections);
+            } catch (error) {
+                console.error(error);
 
-            // Initialize selected options with first value
-            const initialSelections = fetchedImages.reduce((acc, img) => {
-                acc[img.id] = "";
-                return acc;
-            }, {} as { [key: string]: string });
-
-            setSelectedOptions(initialSelections);
-            setLoading(false);
+            } finally {
+                setLoading(false);
+            }
         };
 
         fetchData();
-    }, []);
+    }, [labelClass]);
 
     const handleChange = (imageId: string, value: string) => {
         setSelectedOptions((prev) => ({
@@ -84,22 +79,34 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
         // Submit selectedOptions to API here
     };
 
-    const handleSave = (imageId: string) => {
+    const handleSave = async (imageId: string,imageUrl:string) => {
         console.log("imageId", imageId);
         console.log("selected value", selectedOptions[imageId]);
-        if (!selectedOptions[imageId]) {
+        if ((!selectedOptions[imageId] && !customClasses[imageId])) {
             return;
         }
-        setImages((images) =>
-            images.map((img) =>
-                img.id === imageId ? { ...img, isLabelled: true } : img
-            )
-        );
-
+        const value = selectedOptions[imageId] || customClasses[imageId];
+        try {
+            // await postLabelForImage({ label: value, imageUrl: imageUrl });
+            if (customClasses[imageId]) {
+                fetchLabels();
+                toast.success(`Custom label "${value}" added and available in sidebar!`);
+            }
+            setImages((images) =>
+                images.map((img) =>
+                    img.id === imageId ? { ...img, isLabelled: true } : img
+                )
+            );
+            toast.success('Image labeled successfully!');
+        }
+        catch (error) {
+            console.error(error);
+            toast.error('Something went wrong while labeling the image.');
+        }
     }
 
     if (loading) {
-       return <div className="flex flex-col flex-1 justify-center items-center"><Spinner /></div>
+        return <div className="flex flex-col flex-1 justify-center items-center"><Spinner /></div>
     }
 
     return (
@@ -110,7 +117,7 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
                         {/* <img src={image.url} alt={image.alt} style={{ width: '150px', height: 'auto' }} /> */}
                         <ImageZoom>
                             <div className="relative">
-                                <SafeImage src={image.url} alt={image.alt} height="h-80"/>
+                                <SafeImage src={image.url} alt={image.alt} height="h-80" />
                                 {/* Conditionally render diagonal text */}
                                 {image.isLabelled && mode === 'unlabelled' && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -149,8 +156,8 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
                                 ))}
                             </PopoverContent>
                         </Popover> */}
-                        <div className="flex gap-2">
-                            <Select onValueChange={(value) => handleChange(image.id, value)} disabled={image.isLabelled || mode === 'labelled'}>
+                        {mode === 'unlabelled' && <div className="flex gap-2">
+                            <Select onValueChange={(value) => handleChange(image.id, value)}>
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Theme">{selectedOptions[image.id]}</SelectValue>
                                 </SelectTrigger>
@@ -160,15 +167,14 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Input 
-                            type="text"
-                            placeholder="Enter a custom class"
-                            value={customClasses[image.id] || ''}
-                            onChange={(e)=>setCustomClasses(prev=>({...prev,[image.id]:e.target.value}))}
+                            <Input
+                                type="text"
+                                placeholder="Enter a custom class"
+                                value={customClasses[image.id] || ''}
+                                onChange={(e) => setCustomClasses(prev => ({ ...prev, [image.id]: e.target.value }))}
                             />
-                            {mode === "unlabelled" && <Button onClick={() => handleSave(image.id)} disabled={(!selectedOptions[image.id] && !customClasses[image.id]) || image.isLabelled}>Save</Button>}
-                        </div>
-
+                            <Button onClick={() => handleSave(image.id,image.url)} disabled={(!selectedOptions[image.id] && !customClasses[image.id]) || image.isLabelled}>Save</Button>
+                        </div>}
                     </div>
                 ))}
             </div>
