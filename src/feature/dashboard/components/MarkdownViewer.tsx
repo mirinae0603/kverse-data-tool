@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Response } from '@/components/ui/shadcn-io/ai/response';
 import { Spinner } from '@/components/ui/shadcn-io/spinner';
-import { SafeImage } from '@/components/ui/safe-image';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
+import { getMarkdown, getMarkdownForImages, saveMarkdown } from '@/api/dashboard.api';
 
 type MarkdownItem = {
     id: string;
@@ -17,39 +18,103 @@ const MarkdownViewer: React.FC = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [currentMarkdown, setCurrentMarkdown] = useState('');
     const [loading, setLoading] = useState(true);
-    const [isEditMode, setIsEditMode] = useState(true);
+    const [processing, setProcessing] = useState(false);
+    const [noFiles, setNoFiles] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
     const [isImageLoaded, setIsImageLoaded] = useState(false);
 
-    // Simulate fetching data
     useEffect(() => {
+        let timeoutId: ReturnType<typeof setTimeout> | null = null;
+        let isPolling = true;
+        let hasFetchedOnce = false;
+
         const fetchItems = async () => {
             setLoading(true);
-            await new Promise((res) => setTimeout(res, 500));
+            try {
+                const response = await getMarkdownForImages("Chapter");
+                if (response.status === "error") {
+                    setNoFiles(true);
+                    setLoading(false);
+                    return;
+                }
+                setProcessing(true);
+                const poll = async () => {
+                    try {
+                        const data = await getMarkdown();
+                        if(data.status === "started" && data.payload.length === 0){
+                            timeoutId = setTimeout(poll,3000);
+                        }
+                        if (Array.isArray(data.payload) && data.payload.length > 0) {
+                            const mapped = data.payload.map((item: any) => ({
+                                id: item.image_url,
+                                imageUrl: item.image_url,
+                                markdown: item.Markdown_content,
+                                isSaved: false,
+                            }));
+                            if (!hasFetchedOnce) {
+                                setItems(mapped);
+                                setCurrentMarkdown(mapped[0].markdown);
+                                setLoading(false);
+                                setProcessing(false);
+                                hasFetchedOnce = true;
+                            } else {
+                                setItems((prevItems) => {
+                                    const existingIds = new Set(prevItems.map((i) => i.id));
+                                    const newItems = mapped.filter((i:MarkdownItem) => !existingIds.has(i.id));
+                                    if (newItems.length === 0) return prevItems; 
+                                    return [...prevItems, ...newItems];
+                                });
+                            }
+                            const done = data.status === 'success';
 
-            const data: MarkdownItem[] = [
-                { id: '1', imageUrl: 'https://picsum.photos/400?random=1', markdown: '# Markdown 1\nSome text here.', isSaved: false },
-                { id: '2', imageUrl: 'https://picsum.photos/400?random=2', markdown: '## Markdown 2\nAnother text here.', isSaved: false },
-                { id: '3', imageUrl: 'https://picsum.photos/400?random=3', markdown: '### Markdown 3\nMore text.', isSaved: false },
-            ];
+                            if (!done && isPolling) {
+                                timeoutId = setTimeout(poll, 3000);
+                            }
+                        }
+                    } catch (err) {
+                        console.error(err);
+                    }
+                };
 
-            setItems(data);
-            setCurrentMarkdown(data[0].markdown);
-            setLoading(false);
+                poll();
+            } catch (error) {
+                console.error(error);
+                toast.error("Something went wrong! Please try again later.");
+            }
         };
 
         fetchItems();
+
+        return () => {
+            isPolling = false;
+            if (timeoutId) clearTimeout(timeoutId);
+        };
     }, []);
-
-
 
     const currentItem = items[currentIndex];
 
-    const handleSave = () => {
+    const handleSave = async () => {
         console.log(`Saved markdown for item ${currentItem.id}:`, currentMarkdown);
+        if (currentItem.isSaved) {
+            return;
+        }
+        try {
+            await saveMarkdown({ image_url: currentItem.imageUrl, markdown: currentMarkdown });
+            setItems((items: MarkdownItem[]) =>
+                items.map(item =>
+                    item.id === currentItem.imageUrl ? { ...item,markdown: currentMarkdown, isSaved: true } : item
+                )
+            );
+            toast.success("Markdown saved!");
+        } catch (error) {
+            console.log(error);
+        }
     };
 
     const handleNext = () => {
-        handleSave();
+        if (!currentItem.isSaved) {
+            toast.error("Need to save the current item to continue!");
+        }
         if (currentIndex < items.length - 1) {
             setCurrentIndex(currentIndex + 1);
             setIsImageLoaded(false);
@@ -68,9 +133,30 @@ const MarkdownViewer: React.FC = () => {
             setIsEditMode(true);
         }
     };
-    
-    if (loading) {
-        return <div className="flex flex-col flex-1 justify-center items-center"><Spinner /></div>;
+
+    if (loading && !processing && !noFiles) {
+        return (
+            <div className="flex flex-col flex-1 justify-center items-center">
+                <Spinner />
+            </div>
+        );
+    }
+
+    if (noFiles) {
+        return (
+            <div className="flex flex-col flex-1 justify-center items-center">
+                <p className="text-gray-600 text-lg">Please label all unclassified images before starting markdown extraction.</p>
+            </div>
+        );
+    }
+
+    if (processing) {
+        return (
+            <div className="flex flex-col flex-1 justify-center items-center">
+                <Spinner />
+                <p className="text-gray-600 mt-2 text-lg">Files are being fetched. Please wait...</p>
+            </div>
+        );
     }
 
     if (!items.length) return <p>No items found.</p>;
@@ -117,7 +203,7 @@ const MarkdownViewer: React.FC = () => {
                                 onChange={(e) => setCurrentMarkdown(e.target.value)}
                             />
                         ) : (
-                            <div className="flex-1 border p-2 rounded-lg overflow-auto">
+                            <div className="flex-1 border p-2 rounded-lg overflow-auto max-w-2xl">
                                 <Response>{currentMarkdown}</Response>
                             </div>
                         )}
@@ -131,7 +217,7 @@ const MarkdownViewer: React.FC = () => {
                     Previous
                 </Button>
                 <Button onClick={handleSave} disabled={currentItem.isSaved}>Save</Button>
-                <Button onClick={handleNext} disabled={currentIndex === items.length - 1}>
+                <Button onClick={handleNext} disabled={currentIndex === items.length - 1 || !currentItem.isSaved}>
                     Next
                 </Button>
             </div>

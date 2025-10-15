@@ -1,23 +1,28 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, type FormEvent } from 'react';
 import ReactCrop, { centerCrop, makeAspectCrop, type Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { CircleX, ClosedCaption } from 'lucide-react';
+import { CircleX } from 'lucide-react';
 import { Spinner } from '@/components/ui/shadcn-io/spinner';
-import { SafeImage } from '@/components/ui/safe-image';
 import { Skeleton } from '@/components/ui/skeleton';
+import { generateImageDescriptions, getImageDescriptions, getImageDescriptionStatus } from '@/api/dashboard.api';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 type CroppedItem = {
     src: string;
-    label: string;
+    description: string;
+    name: string
     relativeCrop: Crop;
 };
 
 type ImageItem = {
     id: string;
     url: string;
+    descriptions: Array<string>;
+    names: Array<string>;
 };
 
 const LABEL_OPTIONS = ['Person', 'Car', 'Animal', 'Other'];
@@ -48,23 +53,54 @@ const ImageCropAnnotator: React.FC = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [crop, setCrop] = useState<Crop>();
     const [croppedImagesMap, setCroppedImagesMap] = useState<Record<string, CroppedItem[]>>({});
-    const [selectedLabel, setSelectedLabel] = useState('');
-    const [customLabel, setCustomLabel] = useState('');
+    const [selectedDescription, setSelectedDescription] = useState('');
+    const [selectedName, setSelectedName] = useState('');
     const [isLoadedImage, setIsLoadedImage] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [input, setInput] = useState('');
+    const [showInput, setShowInput] = useState(false);
+    const [generating, setGenerating] = useState(false);
     const imageRef = useRef<HTMLImageElement | null>(null);
 
-    // Fetch images (dummy data for now)
     useEffect(() => {
-        const fetchImages = async () => {
-            // Simulate API call
-            const fetchedImages: ImageItem[] = Array.from({ length: 5 }, (_, i) => ({
-                id: (i + 1).toString(),
-                url: `https://picsum.photos/1920/1080?random=${i + 1}`,
-            }));
-            setImages(fetchedImages);
+        let isMounted = true;
+
+        const getImages = async () => {
+            setLoading(true);
+            try {
+                const data = await getImageDescriptionStatus();
+                if (!isMounted) return;
+
+                if (data.status === "missing") {
+                    setShowInput(true);
+                } else {
+                    await fetchImages();
+                }
+            } catch (error) {
+                if (isMounted) console.error("Error fetching images:", error);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
         };
-        fetchImages();
+
+        getImages();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
+
+    const fetchImages = async () => {
+        try {
+            const data = await getImageDescriptions();
+            if (Array.isArray(data.message) && data.message.length > 0) {
+                let formatted_data: ImageItem[] = data.message.map((msg: any, ind: number) => ({ id: ind.toString(), image_url: msg.image_url, descriptions: msg.descriptions, names: msg.names }));
+                setImages(formatted_data);
+            }
+        } catch (error) {
+            console.error("Error fetching image descriptions:", error);
+        }
+    };
 
     const currentImage = images[currentIndex];
 
@@ -133,14 +169,13 @@ const ImageCropAnnotator: React.FC = () => {
 
         const croppedSrc = await makeClientCrop(cropValue);
         if (!croppedSrc || !currentImage) return;
-        const label = customLabel || selectedLabel;
-        const newCropped: CroppedItem = { src: croppedSrc, label, relativeCrop: cropValue };
+        const newCropped: CroppedItem = { src: croppedSrc, description: selectedDescription, relativeCrop: cropValue, name: selectedName };
         setCroppedImagesMap((prev) => ({
             ...prev,
             [currentImage.id]: prev[currentImage.id] ? [...prev[currentImage.id], newCropped] : [newCropped],
         }));
-        setSelectedLabel('');
-        setCustomLabel('');
+        setSelectedDescription('');
+        setSelectedName('');
     };
 
     const handleSave = () => {
@@ -171,7 +206,60 @@ const ImageCropAnnotator: React.FC = () => {
         setIsLoadedImage(true);
     };
 
-    if (images.length === 0) return <div className="flex flex-col flex-1 justify-center items-center"><Spinner /></div>;
+    const handleSubmit = async (e: FormEvent) => {
+        setShowInput(false);
+        setGenerating(true);
+        try {
+            e.preventDefault();
+            await generateImageDescriptions(input);
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            await fetchImages();
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setGenerating(false);
+        }
+    }
+
+    if (loading && !generating && !showInput) {
+        return <div className="flex flex-col flex-1 justify-center items-center"><Spinner /></div>
+    }
+
+    if (showInput) {
+        return <>
+            <div className="flex flex-col flex-1 justify-center items-center p-4">
+                <form className="flex flex-col gap-3 w-full max-w-xl" onSubmit={handleSubmit}>
+                    <Textarea
+                        placeholder="Enter topic"
+                        className="flex-1"
+                        onChange={e => setInput(e.target.value)}
+                    />
+                    <Button
+                        className="w-full sm:w-auto"
+                        type="submit"
+                        disabled={!input}
+                    >
+                        Submit
+                    </Button>
+                </form>
+            </div>
+        </>
+    }
+
+    if (generating) {
+        return <>
+            <div className="flex flex-col flex-1 justify-center items-center">
+                <Spinner />
+                <p className="text-gray-600 mt-2 text-lg">Image descriptions are getting generated. Please wait...</p>
+            </div>
+        </>
+    }
+
+    if (images.length === 0) {
+        return <div className="flex flex-col flex-1 justify-center items-center">
+            <p className="text-gray-600 text-lg">No images available for annotation.</p>
+        </div>
+    }
 
     return (
         <div className="flex flex-col flex-1 gap-4 p-4">
@@ -185,12 +273,12 @@ const ImageCropAnnotator: React.FC = () => {
                     {!isLoadedImage && <Skeleton className="w-full h-full" />}
 
                     <div className="flex gap-2 mt-2">
-                        <Select onValueChange={(v) => setSelectedLabel(v)} value={selectedLabel} disabled={!!customLabel}>
-                            <SelectTrigger className="w-36">
-                                <SelectValue placeholder="Select label">{selectedLabel}</SelectValue>
+                        <Select onValueChange={(v) => setSelectedDescription(v)} value={selectedDescription}>
+                            <SelectTrigger className="max-w-xs">
+                                <SelectValue placeholder="Select Description">{selectedDescription}</SelectValue>
                             </SelectTrigger>
-                            <SelectContent>
-                                {LABEL_OPTIONS.map((option) => (
+                            <SelectContent className="max-w-xs">
+                                {currentImage.descriptions.map((option) => (
                                     <SelectItem key={option} value={option}>
                                         {option}
                                     </SelectItem>
@@ -198,13 +286,20 @@ const ImageCropAnnotator: React.FC = () => {
                             </SelectContent>
                         </Select>
 
-                        <Input
-                            placeholder="Or enter custom label"
-                            value={customLabel}
-                            onChange={(e) => setCustomLabel(e.target.value)}
-                        />
+                        <Select onValueChange={(v) => setSelectedName(v)} value={selectedName}>
+                            <SelectTrigger className="max-w-sm">
+                                <SelectValue placeholder="Select Name">{selectedName}</SelectValue>
+                            </SelectTrigger>
+                            <SelectContent className="max-w-sm">
+                                {currentImage.names.map((option) => (
+                                    <SelectItem key={option} value={option}>
+                                        {option}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
 
-                        <Button onClick={handleAddCrop} disabled={!selectedLabel && !customLabel}>
+                        <Button onClick={handleAddCrop} disabled={!selectedDescription && !selectedName}>
                             Add Crop
                         </Button>
                     </div>
@@ -216,18 +311,38 @@ const ImageCropAnnotator: React.FC = () => {
                         <div key={idx} className="flex gap-2 border p-2 rounded shadow">
                             <CircleX type='button' className="text-black" onClick={() => handleCropDelete(cropItem.src)} />
                             <img src={cropItem.src} alt={`Crop ${idx}`} className="flex-1 w-full h-32 object-contain rounded" />
-                            <Input
-                                className="flex-2"
-                                value={cropItem.label}
-                                onChange={(e) => {
-                                    const updated = [...(croppedImagesMap[currentImage.id] || [])];
-                                    updated[idx].label = e.target.value;
-                                    setCroppedImagesMap((prev) => ({
-                                        ...prev,
-                                        [currentImage.id]: updated,
-                                    }));
-                                }}
-                            />
+                            <div className="flex-2 flex flex-col gap-3">
+                                <div className="grid gap-2">
+                                    <Label>Description</Label>
+                                    <Input
+                                        value={cropItem.description}
+                                        onChange={(e) => {
+                                            const updated = [...(croppedImagesMap[currentImage.id] || [])];
+                                            updated[idx].description = e.target.value;
+                                            setCroppedImagesMap((prev) => ({
+                                                ...prev,
+                                                [currentImage.id]: updated,
+                                            }));
+                                        }}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Name</Label>
+                                    <Input
+                                        value={cropItem.name}
+                                        onChange={(e) => {
+                                            const updated = [...(croppedImagesMap[currentImage.id] || [])];
+                                            updated[idx].name = e.target.value;
+                                            setCroppedImagesMap((prev) => ({
+                                                ...prev,
+                                                [currentImage.id]: updated,
+                                            }));
+                                        }}
+                                    >
+                                    </Input>
+                                </div>
+                            </div>
+
                         </div>
                     ))}
                 </div>

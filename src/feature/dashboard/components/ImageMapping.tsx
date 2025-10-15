@@ -87,7 +87,7 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
         }
         const value = selectedOptions[imageId] || customClasses[imageId];
         try {
-            // await postLabelForImage({ label: value, imageUrl: imageUrl });
+            await postLabelForImage({ label: value, image_url: imageUrl });
             if (customClasses[imageId]) {
                 fetchLabels();
                 toast.success(`Custom label "${value}" added and available in sidebar!`);
@@ -107,6 +107,12 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
 
     if (loading) {
         return <div className="flex flex-col flex-1 justify-center items-center"><Spinner /></div>
+    }
+
+    if(images.length === 0){
+        return <div className="flex flex-col flex-1 justify-center items-center">
+            <p className="text-gray-600 text-lg">No images available for labelling.</p>
+        </div>
     }
 
     return (
@@ -159,7 +165,7 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
                         {mode === 'unlabelled' && <div className="flex gap-2">
                             <Select onValueChange={(value) => handleChange(image.id, value)}>
                                 <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder="Theme">{selectedOptions[image.id]}</SelectValue>
+                                    <SelectValue placeholder="Class">{selectedOptions[image.id]}</SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
                                     {options.map(option => (
