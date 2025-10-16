@@ -60,3 +60,8 @@ export const generateImageDescriptions = async (input:string) => {
     const response = await api.post(`${API_ENDPOINTS.DATA.GENERAGE_IMAGE_DESCRIPTIONS}`,{topics:[input],Regen:true});
     return response.data;
 }
+
+export const saveCroppedImagesWithDescriptions = async (data:any) => {
+    const response = await api.post(`${API_ENDPOINTS.DATA.SAVE_CROPPED_IMAGE_WITH_DESCRIPTIONS}`,data);
+    return response.data;
+}

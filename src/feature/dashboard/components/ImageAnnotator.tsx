@@ -7,7 +7,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { CircleX } from 'lucide-react';
 import { Spinner } from '@/components/ui/shadcn-io/spinner';
 import { Skeleton } from '@/components/ui/skeleton';
-import { generateImageDescriptions, getImageDescriptions, getImageDescriptionStatus } from '@/api/dashboard.api';
+import { generateImageDescriptions, getImageDescriptions, getImageDescriptionStatus, saveCroppedImagesWithDescriptions } from '@/api/dashboard.api';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -94,7 +94,7 @@ const ImageCropAnnotator: React.FC = () => {
         try {
             const data = await getImageDescriptions();
             if (Array.isArray(data.message) && data.message.length > 0) {
-                let formatted_data: ImageItem[] = data.message.map((msg: any, ind: number) => ({ id: ind.toString(), image_url: msg.image_url, descriptions: msg.descriptions, names: msg.names }));
+                let formatted_data: ImageItem[] = data.message.map((msg: any, ind: number) => ({ id: ind.toString(), url: msg.image_url, descriptions: msg.descriptions, names: msg.names }));
                 setImages(formatted_data);
             }
         } catch (error) {
@@ -178,9 +178,21 @@ const ImageCropAnnotator: React.FC = () => {
         setSelectedName('');
     };
 
-    const handleSave = () => {
-        console.log('All cropped images:', croppedImagesMap);
-        alert('Cropped images saved! Check console.');
+    const handleSave = async () => {
+        try {
+            const currentCrops = croppedImagesMap[currentImage.id];
+            const payload = {
+                image_url: currentImage.url, 
+                coords: currentCrops.map((crop: CroppedItem) => ({
+                    name: crop.name,
+                    description: crop.description,
+                    relativeCoordinates: crop.relativeCrop, 
+                })),
+            };
+            await saveCroppedImagesWithDescriptions(payload);
+        } catch (error) {
+            console.error("Error saving cropped images:", error);
+        }
     };
 
     const handleCropChange = (newCrop: Crop) => {
@@ -268,7 +280,7 @@ const ImageCropAnnotator: React.FC = () => {
                 {/* Left: main image with crop */}
                 <div className="w-full md:w-1/2 flex flex-col gap-2 items-center">
                     <ReactCrop crop={crop} onChange={(c) => handleCropChange(c)} ruleOfThirds>
-                        <img ref={imageRef} src={currentImage.url} alt="To crop" className="max-w-full max-h-full object-contain" crossOrigin="anonymous" onLoad={(e) => onImageLoad(e)} />
+                        <img ref={imageRef} src={currentImage.url} alt="To crop" className="max-w-full max-h-full object-contain" crossOrigin='anonymous' onLoad={(e) => onImageLoad(e)} />
                     </ReactCrop>
                     {!isLoadedImage && <Skeleton className="w-full h-full" />}
 
