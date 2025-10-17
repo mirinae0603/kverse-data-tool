@@ -150,7 +150,7 @@ const MarkdownViewer: React.FC = () => {
             </div>
         );
     }
-    
+
     if (processing) {
         return (
             <div className="flex flex-col flex-1 justify-center items-center">
@@ -208,7 +208,7 @@ const MarkdownViewer: React.FC = () => {
                                 onChange={(e) => setCurrentMarkdown(e.target.value)}
                             />
                         ) : (
-                            <div className="flex-1 border p-2 rounded-lg overflow-auto max-w-2xl">
+                            <div className="flex-1 border p-2 rounded-lg overflow-auto">
                                 <Response>{currentMarkdown}</Response>
                             </div>
                         )}

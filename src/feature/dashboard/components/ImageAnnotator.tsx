@@ -7,9 +7,10 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { CircleX } from 'lucide-react';
 import { Spinner } from '@/components/ui/shadcn-io/spinner';
 import { Skeleton } from '@/components/ui/skeleton';
-import { generateImageDescriptions, getImageDescriptions, getImageDescriptionStatus, saveCroppedImagesWithDescriptions } from '@/api/dashboard.api';
+import { generateImageDescriptions, getImageDescriptions, getImageDescriptionStatus, onCompleteProcess, saveCroppedImagesWithDescriptions } from '@/api/dashboard.api';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 
 type CroppedItem = {
     src: string;
@@ -233,6 +234,16 @@ const ImageCropAnnotator: React.FC = () => {
         }
     }
 
+    const handleComplete = async () => {
+        try {
+            await onCompleteProcess();
+            toast.success("Process completed succesfully!");
+        } catch (error){
+            console.error(error);
+            toast.error("Failed to complete the process");
+        }
+    }
+
     if (loading && !generating && !showInput) {
         return <div className="flex flex-col flex-1 justify-center items-center"><Spinner /></div>
     }
@@ -326,7 +337,7 @@ const ImageCropAnnotator: React.FC = () => {
                             <div className="flex-2 flex flex-col gap-3">
                                 <div className="grid gap-2">
                                     <Label>Description</Label>
-                                    <Input
+                                    <Textarea
                                         value={cropItem.description}
                                         onChange={(e) => {
                                             const updated = [...(croppedImagesMap[currentImage.id] || [])];
@@ -372,6 +383,13 @@ const ImageCropAnnotator: React.FC = () => {
                 >
                     Next
                 </Button>
+                {currentIndex === images.length - 1 && 
+                <Button
+                onClick={()=>handleComplete()}
+                >
+                    Complete
+                </Button>
+                }
             </div>
         </div>
     );

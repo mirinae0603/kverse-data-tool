@@ -10,6 +10,7 @@ export const API_ENDPOINTS = {
         GET_IMAGE_DESCRIPTIONS: "/get_image_descriptions",
         GET_IMAGE_DESCRIPTIONS_STATUS:"/get_image_descriptions/status",
         GENERAGE_IMAGE_DESCRIPTIONS: "/get_image_descriptions/generate",
-        SAVE_CROPPED_IMAGE_WITH_DESCRIPTIONS: "/extract_diagrams"
+        SAVE_CROPPED_IMAGE_WITH_DESCRIPTIONS: "/extract_diagrams",
+        ON_COMPLETE: "/process_and_upload_to_vdb"
     }
 }

@@ -65,3 +65,8 @@ export const saveCroppedImagesWithDescriptions = async (data:any) => {
     const response = await api.post(`${API_ENDPOINTS.DATA.SAVE_CROPPED_IMAGE_WITH_DESCRIPTIONS}`,data);
     return response.data;
 }
+
+export const onCompleteProcess = async () => {
+    const response = await api.post(`${API_ENDPOINTS.DATA.ON_COMPLETE}`);
+    return response.data;
+}
