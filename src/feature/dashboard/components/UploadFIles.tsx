@@ -170,8 +170,8 @@ const UploadFiles = () => {
                         <Label>Book Name</Label>
                         <Input
                             type="text"
-                            placeholder="Enter chapter name"
-                            value={chapter}
+                            placeholder="Enter book name"
+                            value={book}
                             onChange={(e) => setBook(e.target.value)}
                         />
                         {errors.book && (

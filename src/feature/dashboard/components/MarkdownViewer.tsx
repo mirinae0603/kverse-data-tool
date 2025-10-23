@@ -37,7 +37,7 @@ const MarkdownViewer: React.FC = () => {
                     try {
                         const data = await getMarkdown();
 
-                        if (data.status === "error" || data.status === "warning") {
+                        if (!data || data.status === "error" || data.status === "warning") {
                             throw new Error(data.messsage);
                         }
 
@@ -158,6 +158,14 @@ const MarkdownViewer: React.FC = () => {
                 <p className="text-gray-600 mt-2 text-lg">Markdown's are being fetched. Please wait...</p>
             </div>
         );
+    }
+
+    if(!currentItem){
+        return (
+            <div className="flex flex-col flex-1 justify-center items-center">
+                <p className="text-graty-600 mt-2 text-lg">No data to extract markdown from.</p>
+            </div>
+        )
     }
 
     if (error) return (

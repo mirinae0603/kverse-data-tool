@@ -33,7 +33,6 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
     const [loading, setLoading] = useState(true);
     const { fetchLabels } = useLabelled();
 
-    // Simulate fetching from API
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
@@ -63,7 +62,6 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
                 setLoading(false);
             }
         };
-
         fetchData();
     }, [labelClass]);
 
