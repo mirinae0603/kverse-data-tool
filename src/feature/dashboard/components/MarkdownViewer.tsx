@@ -75,6 +75,8 @@ const MarkdownViewer: React.FC = () => {
                             if (!done && isPollingRef.current) {
                                 timeoutId = setTimeout(poll, 15000);
                             }
+                        } else {
+                            setLoading(false);
                         }
                     } catch (err) {
                         console.error(err);
@@ -163,7 +165,7 @@ const MarkdownViewer: React.FC = () => {
     if(!currentItem){
         return (
             <div className="flex flex-col flex-1 justify-center items-center">
-                <p className="text-graty-600 mt-2 text-lg">No data to extract markdown from.</p>
+                <p className="text-graty-600 mt-2 text-lg">No data available for markdown processing.</p>
             </div>
         )
     }

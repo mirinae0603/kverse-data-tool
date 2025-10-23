@@ -31,7 +31,7 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
     const [selectedOptions, setSelectedOptions] = useState<{ [imageId: string]: string }>({});
     const [customClasses, setCustomClasses] = useState<{ [imageId: string]: string }>({});
     const [loading, setLoading] = useState(true);
-    const { fetchLabels } = useLabelled();
+    const { fetchLabels,items } = useLabelled();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -86,9 +86,11 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
         const value = selectedOptions[imageId] || customClasses[imageId];
         try {
             await postLabelForImage({ label: value, image_url: imageUrl });
-            if (customClasses[imageId]) {
+            if (customClasses[imageId] || (selectedOptions[imageId] && !items.map(item=>item.title).includes(selectedOptions[imageId]))) {
                 fetchLabels();
-                toast.success(`Custom label "${value}" added and available in sidebar!`);
+                if(customClasses[imageId]){
+                    toast.success(`Custom label "${value}" added and available in sidebar!`);
+                }
             }
             setImages((images) =>
                 images.map((img) =>

@@ -71,6 +71,7 @@ const UploadFiles = () => {
             setChapter("");
             setGrade("");
             setSubject("");
+            setBook("");
             setFiles([]);
             toast.success('Files uploaded successfully!');
         } catch (error) {
