@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,15 +18,22 @@ import {
 } from '@/components/ui/shadcn-io/dropzone';
 import { toast } from 'sonner';
 import { uploadFile } from '@/api/dashboard.api';
+import { gradeSubjects } from '@/data/gradeSubjects';
 
 const UploadFiles = () => {
     const [board, setBoard] = useState('');
     const [subject, setSubject] = useState('');
     const [grade, setGrade] = useState('');
     const [chapter, setChapter] = useState('');
-    const [book,setBook] = useState('');
+    const [book, setBook] = useState('');
     const [files, setFiles] = useState<File[]>([]);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    useEffect(()=>{
+        if(subject){
+            setSubject('');
+        }
+    },[grade]);
 
     const handleDrop = (acceptedFiles: File[]) => {
         setFiles(acceptedFiles);
@@ -57,7 +64,7 @@ const UploadFiles = () => {
         formData.set("subject", subject);
         formData.set("chapter", chapter);
         formData.set("grade", grade);
-        formData.set("book",book);
+        formData.set("book", book);
         try {
             await uploadFile(formData);
             setBoard("");
@@ -71,6 +78,9 @@ const UploadFiles = () => {
         }
         setErrors({});
     };
+
+    const subjects: { subject: string; code: string }[] =
+        gradeSubjects.find((g) => g.label === grade)?.values || [];
 
     return (
         <div className="flex flex-col items-center justify-center flex-1 w-full py-10">
@@ -105,9 +115,9 @@ const UploadFiles = () => {
                                 <SelectValue placeholder="Select grade" />
                             </SelectTrigger>
                             <SelectContent>
-                                {Array.from({ length: 12 }, (_, i) => (
-                                    <SelectItem key={i + 1} value={`grade-${i + 1}`}>
-                                        Grade {i + 1}
+                                {Array.from({ length: 7 }, (_, i) => (
+                                    <SelectItem key={i + 1} value={`${6 + i}`}>
+                                        Grade {6 + i}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -120,15 +130,20 @@ const UploadFiles = () => {
                     {/* Subject */}
                     <div className="flex flex-col space-y-2">
                         <Label>Subject</Label>
-                        <Select value={subject} onValueChange={setSubject}>
+                        <Select value={subject} onValueChange={setSubject} disabled={!grade}>
                             <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select subject" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="maths">Mathematics</SelectItem>
+                                {
+                                    subjects.map((subject:any)=>(
+                                        <SelectItem value={subject.code}>{subject.subject}</SelectItem>
+                                    ))
+                                }
+                                {/* <SelectItem value="maths">Mathematics</SelectItem>
                                 <SelectItem value="science">Science</SelectItem>
                                 <SelectItem value="english">English</SelectItem>
-                                <SelectItem value="social">Social Studies</SelectItem>
+                                <SelectItem value="social">Social Studies</SelectItem> */}
                             </SelectContent>
                         </Select>
                         {errors.subject && (
