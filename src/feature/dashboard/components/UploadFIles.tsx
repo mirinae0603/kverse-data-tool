@@ -24,6 +24,7 @@ const UploadFiles = () => {
     const [subject, setSubject] = useState('');
     const [grade, setGrade] = useState('');
     const [chapter, setChapter] = useState('');
+    const [book,setBook] = useState('');
     const [files, setFiles] = useState<File[]>([]);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -36,8 +37,9 @@ const UploadFiles = () => {
         if (!board) newErrors.board = 'Please select a board';
         if (!grade) newErrors.grade = 'Please select a grade';
         if (!subject) newErrors.subject = 'Please select a subject';
-        if (!chapter.trim()) newErrors.chapter = 'Please enter a chapter name';
+        // if (!chapter.trim()) newErrors.chapter = 'Please enter a chapter name';
         if (files.length === 0) newErrors.files = 'Please upload at least one file';
+        if (!book) newErrors.book = "Please enter the book name"
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -50,11 +52,12 @@ const UploadFiles = () => {
         }
         console.log({ board, subject, grade, chapter, files });
         const formData = new FormData();
-        formData.set("file",files[0]);
-        formData.set("board",board);
-        formData.set("subject",subject);
-        formData.set("chapter",chapter);
-        formData.set("grade",grade);
+        formData.set("file", files[0]);
+        formData.set("board", board);
+        formData.set("subject", subject);
+        formData.set("chapter", chapter);
+        formData.set("grade", grade);
+        formData.set("book",book);
         try {
             await uploadFile(formData);
             setBoard("");
@@ -63,8 +66,8 @@ const UploadFiles = () => {
             setSubject("");
             setFiles([]);
             toast.success('Files uploaded successfully!');
-        } catch(error){
-            console.error("Failed to get bot response",error);
+        } catch (error) {
+            console.error("Failed to get bot response", error);
         }
         setErrors({});
     };
@@ -144,6 +147,20 @@ const UploadFiles = () => {
                         />
                         {errors.chapter && (
                             <p className="text-sm text-red-500">{errors.chapter}</p>
+                        )}
+                    </div>
+
+                    {/* Book Name */}
+                    <div className="flex flex-col space-y-2">
+                        <Label>Book Name</Label>
+                        <Input
+                            type="text"
+                            placeholder="Enter chapter name"
+                            value={chapter}
+                            onChange={(e) => setBook(e.target.value)}
+                        />
+                        {errors.book && (
+                            <p className="text-sm text-red-500">{errors.book}</p>
                         )}
                     </div>
                 </div>
