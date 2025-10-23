@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, type FormEvent } from 'react';
-import ReactCrop, { centerCrop, makeAspectCrop, type Crop } from 'react-image-crop';
+import ReactCrop, { type Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,27 +26,27 @@ type ImageItem = {
     names: Array<string>;
 };
 
-const LABEL_OPTIONS = ['Person', 'Car', 'Animal', 'Other'];
+// const LABEL_OPTIONS = ['Person', 'Car', 'Animal', 'Other'];
 
-function centerAspectCrop(
-    mediaWidth: number,
-    mediaHeight: number,
-    aspect: number,
-) {
-    return centerCrop(
-        makeAspectCrop(
-            {
-                unit: '%',
-                width: 90,
-            },
-            aspect,
-            mediaWidth,
-            mediaHeight,
-        ),
-        mediaWidth,
-        mediaHeight,
-    )
-}
+// function centerAspectCrop(
+//     mediaWidth: number,
+//     mediaHeight: number,
+//     aspect: number,
+// ) {
+//     return centerCrop(
+//         makeAspectCrop(
+//             {
+//                 unit: '%',
+//                 width: 90,
+//             },
+//             aspect,
+//             mediaWidth,
+//             mediaHeight,
+//         ),
+//         mediaWidth,
+//         mediaHeight,
+//     )
+// }
 
 
 const ImageCropAnnotator: React.FC = () => {
@@ -207,7 +207,7 @@ const ImageCropAnnotator: React.FC = () => {
         }));
     };
 
-    const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const onImageLoad = () => {
         setCrop({
             unit: '%',
             width: 50, // initial width 50%
@@ -291,7 +291,7 @@ const ImageCropAnnotator: React.FC = () => {
                 {/* Left: main image with crop */}
                 <div className="w-full md:w-1/2 flex flex-col gap-2 items-center">
                     <ReactCrop crop={crop} onChange={(c) => handleCropChange(c)} ruleOfThirds>
-                        <img ref={imageRef} src={currentImage.url} alt="To crop" className="max-w-full max-h-full object-contain" crossOrigin='anonymous' onLoad={(e) => onImageLoad(e)} />
+                        <img ref={imageRef} src={currentImage.url} alt="To crop" className="max-w-full max-h-full object-contain" crossOrigin='anonymous' onLoad={onImageLoad} />
                     </ReactCrop>
                     {!isLoadedImage && <Skeleton className="w-full h-full" />}
 
