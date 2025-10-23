@@ -4,7 +4,7 @@ import { Response } from '@/components/ui/shadcn-io/ai/response';
 import { Spinner } from '@/components/ui/shadcn-io/spinner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { getMarkdown, getMarkdownForImages, saveMarkdown } from '@/api/dashboard.api';
+import { getMarkdown, saveMarkdown } from '@/api/dashboard.api';
 
 type MarkdownItem = {
     id: string;

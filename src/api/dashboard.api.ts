@@ -31,7 +31,7 @@ export const getLabels = async () => {
     return response.data;
 }
 
-export const getMarkdownForImages = async (label: string) => {
+export const getMarkdownForImages = async () => {
     const response = await api.post(`${API_ENDPOINTS.DATA.GET_MD_FOR_IMAGES}`);
     return response.data;
 }

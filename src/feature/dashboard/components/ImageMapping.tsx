@@ -74,10 +74,10 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
         }));
     };
 
-    const handleSubmit = () => {
-        console.log('Submitted:', selectedOptions);
-        // Submit selectedOptions to API here
-    };
+    // const handleSubmit = () => {
+    //     console.log('Submitted:', selectedOptions);
+    //     // Submit selectedOptions to API here
+    // };
 
     const handleSave = async (imageId: string,imageUrl:string) => {
         console.log("imageId", imageId);
