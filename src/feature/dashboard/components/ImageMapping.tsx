@@ -31,7 +31,7 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
     const [selectedOptions, setSelectedOptions] = useState<{ [imageId: string]: string }>({});
     const [customClasses, setCustomClasses] = useState<{ [imageId: string]: string }>({});
     const [loading, setLoading] = useState(true);
-    const { fetchLabels,items } = useLabelled();
+    const { fetchLabels, items } = useLabelled();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -77,7 +77,7 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
     //     // Submit selectedOptions to API here
     // };
 
-    const handleSave = async (imageId: string,imageUrl:string) => {
+    const handleSave = async (imageId: string, imageUrl: string) => {
         console.log("imageId", imageId);
         console.log("selected value", selectedOptions[imageId]);
         if ((!selectedOptions[imageId] && !customClasses[imageId])) {
@@ -86,9 +86,9 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
         const value = selectedOptions[imageId] || customClasses[imageId];
         try {
             await postLabelForImage({ label: value, image_url: imageUrl });
-            if (customClasses[imageId] || (selectedOptions[imageId] && !items.map(item=>item.title).includes(selectedOptions[imageId]))) {
+            if (customClasses[imageId] || (selectedOptions[imageId] && !items.map(item => item.title).includes(selectedOptions[imageId]))) {
                 fetchLabels();
-                if(customClasses[imageId]){
+                if (customClasses[imageId]) {
                     toast.success(`Custom label "${value}" added and available in sidebar!`);
                 }
             }
@@ -109,7 +109,7 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
         return <div className="flex flex-col flex-1 justify-center items-center"><Spinner /></div>
     }
 
-    if(images.length === 0){
+    if (images.length === 0) {
         return <div className="flex flex-col flex-1 justify-center items-center">
             <p className="text-gray-600 text-lg">No images available for labelling.</p>
         </div>
@@ -179,7 +179,11 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
                                 value={customClasses[image.id] || ''}
                                 onChange={(e) => setCustomClasses(prev => ({ ...prev, [image.id]: e.target.value }))}
                             />
-                            <Button onClick={() => handleSave(image.id,image.url)} disabled={(!selectedOptions[image.id] && !customClasses[image.id]) || image.isLabelled}>Save</Button>
+                            {image.isLabelled ? (
+                                <Button disabled={true}>Labelled</Button>
+                            ) : 
+                            <Button onClick={() => handleSave(image.id, image.url)} disabled={!selectedOptions[image.id] && !customClasses[image.id]}>Save</Button>
+                            }
                         </div>}
                     </div>
                 ))}

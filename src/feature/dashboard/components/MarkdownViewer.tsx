@@ -116,7 +116,9 @@ const MarkdownViewer: React.FC = () => {
                     item.id === currentItem.imageUrl ? { ...item, markdown: currentMarkdown, isSaved: true } : item
                 )
             );
-            toast.success("Markdown saved!");
+            toast.success("Markdown saved!",{
+                position: "top-right"
+            });
         } catch (error) {
             console.log(error);
         }
@@ -130,7 +132,7 @@ const MarkdownViewer: React.FC = () => {
             setCurrentIndex(currentIndex + 1);
             setIsImageLoaded(false);
             setCurrentMarkdown(items[currentIndex + 1].markdown);
-            setIsEditMode(true);
+            setIsEditMode(false);
         } else {
             alert('Reached last item');
         }
@@ -141,7 +143,7 @@ const MarkdownViewer: React.FC = () => {
             setCurrentIndex(currentIndex - 1);
             setIsImageLoaded(false);
             setCurrentMarkdown(items[currentIndex - 1].markdown);
-            setIsEditMode(true);
+            setIsEditMode(false);
         }
     };
 
@@ -189,9 +191,10 @@ const MarkdownViewer: React.FC = () => {
 
                     {/* Actual image */}
                     <img
+                        key={currentIndex}
                         src={currentItem.imageUrl}
                         alt={`Image ${currentItem.id}`}
-                        onLoad={() => setIsImageLoaded(true)}
+                        onLoad={() => {setIsImageLoaded(true)}}
                         className={`max-w-full max-h-full object-contain rounded shadow flex-1 transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'
                             }`}
                     />
