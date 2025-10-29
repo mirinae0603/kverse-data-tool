@@ -291,7 +291,7 @@ const ImageCropAnnotator: React.FC = () => {
                 {/* Left: main image with crop */}
                 <div className="w-full md:w-1/2 flex flex-col gap-2 items-center">
                     <ReactCrop crop={crop} onChange={(c) => handleCropChange(c)} ruleOfThirds>
-                        <img ref={imageRef} src={currentImage.url} alt="To crop" className="max-w-full max-h-full object-contain" crossOrigin='anonymous' onLoad={onImageLoad} />
+                        <img key={currentImage.url} ref={imageRef} src={currentImage.url} alt="To crop" className="max-w-full max-h-full object-contain" crossOrigin='anonymous' onLoad={onImageLoad} />
                     </ReactCrop>
                     {!isLoadedImage && <Skeleton className="w-full h-full" />}
 

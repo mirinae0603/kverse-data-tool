@@ -37,7 +37,7 @@ const MarkdownViewer: React.FC = () => {
                     try {
                         const data = await getMarkdown();
 
-                        if (data.status === "error" || data.status === "warning") {
+                        if (!data || data.status === "error" || data.status === "warning") {
                             throw new Error(data.messsage);
                         }
 
@@ -75,6 +75,8 @@ const MarkdownViewer: React.FC = () => {
                             if (!done && isPollingRef.current) {
                                 timeoutId = setTimeout(poll, 15000);
                             }
+                        } else {
+                            setLoading(false);
                         }
                     } catch (err) {
                         console.error(err);
@@ -114,7 +116,9 @@ const MarkdownViewer: React.FC = () => {
                     item.id === currentItem.imageUrl ? { ...item, markdown: currentMarkdown, isSaved: true } : item
                 )
             );
-            toast.success("Markdown saved!");
+            toast.success("Markdown saved!",{
+                position: "top-right"
+            });
         } catch (error) {
             console.log(error);
         }
@@ -128,7 +132,7 @@ const MarkdownViewer: React.FC = () => {
             setCurrentIndex(currentIndex + 1);
             setIsImageLoaded(false);
             setCurrentMarkdown(items[currentIndex + 1].markdown);
-            setIsEditMode(true);
+            setIsEditMode(false);
         } else {
             alert('Reached last item');
         }
@@ -139,7 +143,7 @@ const MarkdownViewer: React.FC = () => {
             setCurrentIndex(currentIndex - 1);
             setIsImageLoaded(false);
             setCurrentMarkdown(items[currentIndex - 1].markdown);
-            setIsEditMode(true);
+            setIsEditMode(false);
         }
     };
 
@@ -158,6 +162,14 @@ const MarkdownViewer: React.FC = () => {
                 <p className="text-gray-600 mt-2 text-lg">Markdown's are being fetched. Please wait...</p>
             </div>
         );
+    }
+
+    if(!currentItem){
+        return (
+            <div className="flex flex-col flex-1 justify-center items-center">
+                <p className="text-graty-600 mt-2 text-lg">No data available for markdown processing.</p>
+            </div>
+        )
     }
 
     if (error) return (
@@ -179,9 +191,10 @@ const MarkdownViewer: React.FC = () => {
 
                     {/* Actual image */}
                     <img
+                        key={currentIndex}
                         src={currentItem.imageUrl}
                         alt={`Image ${currentItem.id}`}
-                        onLoad={() => setIsImageLoaded(true)}
+                        onLoad={() => {setIsImageLoaded(true)}}
                         className={`max-w-full max-h-full object-contain rounded shadow flex-1 transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'
                             }`}
                     />
