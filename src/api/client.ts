@@ -5,9 +5,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
     config => {
-        // You can add authorization headers or other custom headers here
-        // For example, if you have a token stored in localStorage:
-        const token = localStorage.getItem("authToken");
+        const token = sessionStorage.getItem("access_token");
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }

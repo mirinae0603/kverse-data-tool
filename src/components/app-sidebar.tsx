@@ -2,11 +2,9 @@
 
 import * as React from "react"
 import {
-  Columns2,
   Command,
-  Image,
+  Files,
   SquareTerminal,
-  Tags,
   Upload,
 } from "lucide-react"
 
@@ -21,7 +19,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { useLabelled } from "@/context/LabelledNavContext"
 import { Link } from "react-router-dom"
 
 const data = {
@@ -109,43 +106,22 @@ const data = {
   // ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
-  const { items: LabelledItems } = useLabelled();
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const navMain = [
     {
       title: "Upload File",
-      url: "/",
+      url: "/dashboard",
       icon: Upload,
     },
     {
-      title: "Unlabelled",
-      url: "images/unlabelled",
-      icon: SquareTerminal,
-    },
-    {
-      title: "Labelled",
-      url: "#",
-      icon: Tags,
-      items: LabelledItems
-    },
-    {
-      title: "Markdown Viewer",
-      url: "/markdown-viewer",
-      icon: Columns2,
-      items: [
-      ],
-    },
-    {
-      title: "Image Annotations",
-      url: "/image-annotations",
-      icon: Image,
-      items: [
-      ],
-    },
+      title: "View Uploads",
+      url: "/uploads",
+      icon: Files,
+    }
   ];
-
+  
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
