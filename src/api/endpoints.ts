@@ -11,10 +11,10 @@ export const API_ENDPOINTS = {
         GET_MD_FOR_IMAGES: (uploadId:string) => `/get_md_from_images/${uploadId}`,
         GET_MD: (uploadId:string) => `/md/${uploadId}`,
         SAVE_MD: (uploadId:string) => `/save_eddited_md/${uploadId}`,
-        GET_IMAGE_DESCRIPTIONS: (uploadId:string) => `/get_image_descriptions${uploadId}`,
-        GET_IMAGE_DESCRIPTIONS_STATUS: (uploadId:string) => `/get_image_descriptions/status${uploadId}`,
-        GENERAGE_IMAGE_DESCRIPTIONS: (uploadId:string) => `/get_image_descriptions/generate${uploadId}`,
-        SAVE_CROPPED_IMAGE_WITH_DESCRIPTIONS: (uploadId:string) => `/extract_diagrams${uploadId}`,
+        GET_IMAGE_DESCRIPTIONS: (uploadId:string) => `/get_image_descriptions/${uploadId}`,
+        GET_IMAGE_DESCRIPTIONS_STATUS: (uploadId:string) => `/get_image_descriptions/status/${uploadId}`,
+        GENERAGE_IMAGE_DESCRIPTIONS: (uploadId:string) => `/get_image_descriptions/generate/${uploadId}`,
+        SAVE_CROPPED_IMAGE_WITH_DESCRIPTIONS: (uploadId:string) => `/extract_diagrams/${uploadId}`,
         ON_COMPLETE: (uploadId:string) => `/process_and_upload_to_vdb/${uploadId}`
     }
 }
