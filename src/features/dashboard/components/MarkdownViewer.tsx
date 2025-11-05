@@ -13,7 +13,11 @@ type MarkdownItem = {
     isSaved: boolean;
 };
 
-const MarkdownViewer: React.FC = () => {
+interface MarkdownViewerProps {
+    uploadId: string
+}
+
+const MarkdownViewer: React.FC<MarkdownViewerProps> = ({uploadId}) => {
     const [items, setItems] = useState<MarkdownItem[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [currentMarkdown, setCurrentMarkdown] = useState('');
@@ -25,7 +29,7 @@ const MarkdownViewer: React.FC = () => {
 
     useEffect(() => {
         let timeoutId: ReturnType<typeof setTimeout> | null = null;
-        const isPollingRef = { current: true }; // simple ref-like object
+        const isPollingRef = { current: true }; 
         let hasFetchedOnce = false;
 
         const fetchItems = async () => {
@@ -35,7 +39,7 @@ const MarkdownViewer: React.FC = () => {
                     if (!isPollingRef.current) return;
 
                     try {
-                        const data = await getMarkdown();
+                        const data = await getMarkdown(uploadId);
 
                         if (!data || data.status === "error" || data.status === "warning") {
                             throw new Error(data.messsage);
@@ -110,7 +114,7 @@ const MarkdownViewer: React.FC = () => {
             return;
         }
         try {
-            await saveMarkdown({ image_url: currentItem.imageUrl, markdown: currentMarkdown });
+            await saveMarkdown(uploadId, { image_url: currentItem.imageUrl, markdown: currentMarkdown });
             setItems((items: MarkdownItem[]) =>
                 items.map(item =>
                     item.id === currentItem.imageUrl ? { ...item, markdown: currentMarkdown, isSaved: true } : item

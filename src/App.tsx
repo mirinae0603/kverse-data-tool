@@ -1,28 +1,35 @@
 import './App.css'
-import ImageCropAnnotator from './feature/dashboard/components/ImageAnnotator';
-import ImageMapping from './feature/dashboard/components/ImageMapping';
-import MarkdownViewer from './feature/dashboard/components/MarkdownViewer';
-import UploadFiles from './feature/dashboard/components/UploadFIles';
-import Dashboard from './feature/dashboard/Dashboard'
+import ProtectedRoute from './features/auth/components/ProtectedRoute';
+import PublicRoute from './features/auth/components/PublicRoute';
+import { AuthProvider } from './features/auth/context/AuthContext';
+import LoginPage from './features/auth/pages/LoginPage';
+import ProcessUpload from './features/dashboard/components/ProcessUpload';
+import UploadFiles from './features/dashboard/components/UploadFIles';
+import ViewUploads from './features/dashboard/components/ViewUploads';
+import Dashboard from './features/dashboard/Dashboard'
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 function App() {
 
-
   return (
     <>
       <BrowserRouter>
-        <Routes>
-          <Route element={<Dashboard />}>
-            <Route path="/" element={<UploadFiles />} />
-            <Route path="/images/unlabelled" element={<ImageMapping mode="unlabelled" />}></Route>
-            <Route path="/images/labelled" element={<ImageMapping mode="labelled" />}></Route>
-            <Route path="/markdown-viewer" element={<MarkdownViewer />}></Route>
-            <Route path="/image-annotations" element={<ImageCropAnnotator />}></Route>
-          </Route>
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route element={<PublicRoute />}>
+              <Route path="/" element={<LoginPage />}></Route>
+            </Route>
+            <Route element={<ProtectedRoute />}>
+              <Route element={<Dashboard />}>
+                <Route path="/dashboard" element={<UploadFiles />} />
+                <Route path="/uploads" element={<ViewUploads />}></Route>
+                <Route path="/uploads/:uploadId" element={<ProcessUpload />}></Route>
+              </Route>
+            </Route>
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
-
     </>
   )
 }

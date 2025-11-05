@@ -20,10 +20,11 @@ type Image = {
 };
 
 type ImageMappingProps = {
-    mode: "unlabelled" | "labelled"
+    mode: "unlabelled" | "labelled",
+    uploadId: string
 }
 
-const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
+const ImageMapping: React.FC<ImageMappingProps> = ({ uploadId,mode }) => {
     const [searchParams] = useSearchParams();
     const labelClass = searchParams.get('class') ?? '';
     const [images, setImages] = useState<Image[]>([]);
@@ -39,7 +40,7 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
             let fetchedImages: Image[] = [];
             try {
                 const className = mode === 'unlabelled' ? "unclassified" : labelClass;
-                const data = await getImagesForLabelling(className);
+                const data = await getImagesForLabelling(uploadId,className);
                 data.map((img: string, ind: number) => fetchedImages.push({ id: `${ind}`, url: img, alt: `Image ${ind + 1}`, isLabelled: false }))
 
                 const fetchedOptions: string[] = ['Chapter', 'Index'];
@@ -78,14 +79,12 @@ const ImageMapping: React.FC<ImageMappingProps> = ({ mode }) => {
     // };
 
     const handleSave = async (imageId: string, imageUrl: string) => {
-        console.log("imageId", imageId);
-        console.log("selected value", selectedOptions[imageId]);
         if ((!selectedOptions[imageId] && !customClasses[imageId])) {
             return;
         }
         const value = selectedOptions[imageId] || customClasses[imageId];
         try {
-            await postLabelForImage({ label: value, image_url: imageUrl });
+            await postLabelForImage(uploadId,{ label: value, image_url: imageUrl });
             if (customClasses[imageId] || (selectedOptions[imageId] && !items.map(item => item.title).includes(selectedOptions[imageId]))) {
                 fetchLabels();
                 if (customClasses[imageId]) {

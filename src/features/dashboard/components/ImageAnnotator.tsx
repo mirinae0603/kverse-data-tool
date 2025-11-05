@@ -48,8 +48,11 @@ type ImageItem = {
 //     )
 // }
 
+interface ImageCropAnnotatorProps {
+    uploadId:string
+}
 
-const ImageCropAnnotator: React.FC = () => {
+const ImageCropAnnotator: React.FC<ImageCropAnnotatorProps> = ({uploadId}) => {
     const [images, setImages] = useState<ImageItem[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [crop, setCrop] = useState<Crop>();
@@ -69,7 +72,7 @@ const ImageCropAnnotator: React.FC = () => {
         const getImages = async () => {
             setLoading(true);
             try {
-                const data = await getImageDescriptionStatus();
+                const data = await getImageDescriptionStatus(uploadId);
                 if (!isMounted) return;
 
                 if (data.status === "missing") {
@@ -93,7 +96,7 @@ const ImageCropAnnotator: React.FC = () => {
 
     const fetchImages = async () => {
         try {
-            const data = await getImageDescriptions();
+            const data = await getImageDescriptions(uploadId);
             if (Array.isArray(data.message) && data.message.length > 0) {
                 let formatted_data: ImageItem[] = data.message.map((msg: any, ind: number) => ({ id: ind.toString(), url: msg.image_url, descriptions: msg.descriptions, names: msg.names }));
                 setImages(formatted_data);
@@ -190,7 +193,7 @@ const ImageCropAnnotator: React.FC = () => {
                     relativeCoordinates: crop.relativeCrop, 
                 })),
             };
-            await saveCroppedImagesWithDescriptions(payload);
+            await saveCroppedImagesWithDescriptions(uploadId,payload);
         } catch (error) {
             console.error("Error saving cropped images:", error);
         }
@@ -224,7 +227,7 @@ const ImageCropAnnotator: React.FC = () => {
         setGenerating(true);
         try {
             e.preventDefault();
-            await generateImageDescriptions(input);
+            await generateImageDescriptions(uploadId,input);
             await new Promise(resolve => setTimeout(resolve, 5000));
             await fetchImages();
         } catch (error) {
@@ -236,7 +239,7 @@ const ImageCropAnnotator: React.FC = () => {
 
     const handleComplete = async () => {
         try {
-            await onCompleteProcess();
+            await onCompleteProcess(uploadId);
             toast.success("Process completed succesfully!");
         } catch (error){
             console.error(error);
