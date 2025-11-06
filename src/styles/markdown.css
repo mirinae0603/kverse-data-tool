@@ -1,0 +1,13 @@
+@import 'katex/dist/katex.min.css';
+@import 'github-markdown-css/github-markdown.css';
+
+.markdown-custom {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+@media (max-width:600px) {
+  .markdown-custom .control-float {
+    float: none !important
+  }
+}

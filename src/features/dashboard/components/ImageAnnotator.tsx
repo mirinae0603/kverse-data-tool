@@ -11,6 +11,7 @@ import { generateImageDescriptions, getImageDescriptions, getImageDescriptionSta
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 type CroppedItem = {
     src: string;
@@ -24,6 +25,7 @@ type ImageItem = {
     url: string;
     descriptions: Array<string>;
     names: Array<string>;
+    saved: boolean;
 };
 
 // const LABEL_OPTIONS = ['Person', 'Car', 'Animal', 'Other'];
@@ -49,10 +51,10 @@ type ImageItem = {
 // }
 
 interface ImageCropAnnotatorProps {
-    uploadId:string
+    uploadId: string
 }
 
-const ImageCropAnnotator: React.FC<ImageCropAnnotatorProps> = ({uploadId}) => {
+const ImageCropAnnotator: React.FC<ImageCropAnnotatorProps> = ({ uploadId }) => {
     const [images, setImages] = useState<ImageItem[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [crop, setCrop] = useState<Crop>();
@@ -64,7 +66,9 @@ const ImageCropAnnotator: React.FC<ImageCropAnnotatorProps> = ({uploadId}) => {
     const [input, setInput] = useState('');
     const [showInput, setShowInput] = useState(false);
     const [generating, setGenerating] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const imageRef = useRef<HTMLImageElement | null>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         let isMounted = true;
@@ -98,7 +102,7 @@ const ImageCropAnnotator: React.FC<ImageCropAnnotatorProps> = ({uploadId}) => {
         try {
             const data = await getImageDescriptions(uploadId);
             if (Array.isArray(data.message) && data.message.length > 0) {
-                let formatted_data: ImageItem[] = data.message.map((msg: any, ind: number) => ({ id: ind.toString(), url: msg.image_url, descriptions: msg.descriptions, names: msg.names }));
+                let formatted_data: ImageItem[] = data.message.map((msg: any, ind: number) => ({ id: ind.toString(), url: msg.image_url, descriptions: msg.descriptions, names: msg.names, saved: false }));
                 setImages(formatted_data);
             }
         } catch (error) {
@@ -184,18 +188,37 @@ const ImageCropAnnotator: React.FC<ImageCropAnnotatorProps> = ({uploadId}) => {
 
     const handleSave = async () => {
         try {
+            setIsSaving(true);
             const currentCrops = croppedImagesMap[currentImage.id];
             const payload = {
-                image_url: currentImage.url, 
+                image_url: currentImage.url,
                 coords: currentCrops.map((crop: CroppedItem) => ({
                     name: crop.name,
                     description: crop.description,
-                    relativeCoordinates: crop.relativeCrop, 
+                    relativeCoordinates: crop.relativeCrop,
                 })),
             };
-            await saveCroppedImagesWithDescriptions(uploadId,payload);
+            const response = await saveCroppedImagesWithDescriptions(uploadId, payload);
+            if (response.status === 'success') {
+                toast.success('Cropped images saved successfully', {
+                    position: 'top-right'
+                })
+                setImages((images: ImageItem[]) => {
+                    return images.map((image) =>
+                        image.url === currentImage.url
+                            ? { ...image, saved: true }
+                            : image
+                    );
+                });
+            } else {
+                toast.success('Failed to save cropped images', {
+                    position: 'top-right'
+                })
+            }
         } catch (error) {
             console.error("Error saving cropped images:", error);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -227,7 +250,7 @@ const ImageCropAnnotator: React.FC<ImageCropAnnotatorProps> = ({uploadId}) => {
         setGenerating(true);
         try {
             e.preventDefault();
-            await generateImageDescriptions(uploadId,input);
+            await generateImageDescriptions(uploadId, input);
             await new Promise(resolve => setTimeout(resolve, 5000));
             await fetchImages();
         } catch (error) {
@@ -239,11 +262,23 @@ const ImageCropAnnotator: React.FC<ImageCropAnnotatorProps> = ({uploadId}) => {
 
     const handleComplete = async () => {
         try {
-            await onCompleteProcess(uploadId);
-            toast.success("Process completed succesfully!");
-        } catch (error){
+            setIsSaving(true);
+            const response = await onCompleteProcess(uploadId);
+            if (response.status === 'success') {
+                toast.success("Process completed succesfully!");
+                setTimeout(()=>{
+                    navigate("/uploads");
+                },3000);
+            } else {
+                toast.error('Failed to complete the process', {
+                    position: 'top-right'
+                })
+            }
+        } catch (error) {
             console.error(error);
             toast.error("Failed to complete the process");
+        } finally {
+            setIsSaving(false);
         }
     }
 
@@ -379,19 +414,19 @@ const ImageCropAnnotator: React.FC<ImageCropAnnotatorProps> = ({uploadId}) => {
                 <Button onClick={() => currentIndex > 0 && setCurrentIndex(currentIndex - 1)} disabled={currentIndex === 0}>
                     Previous
                 </Button>
-                <Button onClick={handleSave}>Save</Button>
+                <Button onClick={handleSave} disabled={isSaving || currentImage.saved}>Save</Button>
                 <Button
                     onClick={() => currentIndex < images.length - 1 && setCurrentIndex(currentIndex + 1)}
-                    disabled={currentIndex === images.length - 1}
+                    disabled={currentIndex === images.length - 1 || isSaving}
                 >
                     Next
                 </Button>
-                {currentIndex === images.length - 1 && 
-                <Button
-                onClick={()=>handleComplete()}
-                >
-                    Complete
-                </Button>
+                {currentIndex === images.length - 1 &&
+                    <Button
+                        onClick={() => handleComplete()}
+                    >
+                        Complete
+                    </Button>
                 }
             </div>
         </div>

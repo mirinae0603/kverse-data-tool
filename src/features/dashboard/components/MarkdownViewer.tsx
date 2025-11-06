@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Response } from '@/components/ui/shadcn-io/ai/response';
 import { Spinner } from '@/components/ui/shadcn-io/spinner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { getMarkdown, saveMarkdown } from '@/api/dashboard.api';
+import { CheckCircle } from 'lucide-react';
+import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 
 type MarkdownItem = {
     id: string;
@@ -17,7 +18,7 @@ interface MarkdownViewerProps {
     uploadId: string
 }
 
-const MarkdownViewer: React.FC<MarkdownViewerProps> = ({uploadId}) => {
+const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ uploadId }) => {
     const [items, setItems] = useState<MarkdownItem[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [currentMarkdown, setCurrentMarkdown] = useState('');
@@ -29,7 +30,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({uploadId}) => {
 
     useEffect(() => {
         let timeoutId: ReturnType<typeof setTimeout> | null = null;
-        const isPollingRef = { current: true }; 
+        const isPollingRef = { current: true };
         let hasFetchedOnce = false;
 
         const fetchItems = async () => {
@@ -55,15 +56,17 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({uploadId}) => {
                                 id: item.image_url,
                                 imageUrl: item.image_url,
                                 markdown: item.generated_MD,
-                                isSaved: false,
+                                isSaved: item.edited,
                             }));
 
                             if (!hasFetchedOnce) {
                                 setItems(mapped);
-                                setCurrentMarkdown(mapped[0].markdown);
+                                const index = mapped.findIndex((item: any) => item.isSaved === false);
+                                setCurrentMarkdown(mapped[index].markdown);
                                 setLoading(false);
                                 setProcessing(false);
                                 hasFetchedOnce = true;
+                                setCurrentIndex(index);
                             } else {
                                 setItems((prevItems) => {
                                     const existingIds = new Set(prevItems.map((i) => i.id));
@@ -120,7 +123,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({uploadId}) => {
                     item.id === currentItem.imageUrl ? { ...item, markdown: currentMarkdown, isSaved: true } : item
                 )
             );
-            toast.success("Markdown saved!",{
+            toast.success("Markdown saved!", {
                 position: "top-right"
             });
         } catch (error) {
@@ -130,7 +133,9 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({uploadId}) => {
 
     const handleNext = () => {
         if (!currentItem.isSaved) {
-            toast.error("Need to save the current item to continue!");
+            toast.error("Need to save the current item to continue!", {
+                position: "top-right"
+            });
         }
         if (currentIndex < items.length - 1) {
             setCurrentIndex(currentIndex + 1);
@@ -168,7 +173,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({uploadId}) => {
         );
     }
 
-    if(!currentItem){
+    if (!currentItem) {
         return (
             <div className="flex flex-col flex-1 justify-center items-center">
                 <p className="text-graty-600 mt-2 text-lg">No data available for markdown processing.</p>
@@ -198,7 +203,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({uploadId}) => {
                         key={currentIndex}
                         src={currentItem.imageUrl}
                         alt={`Image ${currentItem.id}`}
-                        onLoad={() => {setIsImageLoaded(true)}}
+                        onLoad={() => { setIsImageLoaded(true) }}
                         className={`max-w-full max-h-full object-contain rounded shadow flex-1 transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'
                             }`}
                     />
@@ -208,9 +213,19 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({uploadId}) => {
                 <div className="w-1/2 flex flex-col gap-2">
                     {/* Toggle button */}
                     <div className="flex justify-end mb-2">
+                        {currentItem.isSaved && (
+                            <div className="flex items-center gap-2">
+                                <span className="w-5 h-5 flex items-center justify-center rounded-full bg-green-300">
+                                    <CheckCircle size={14} className="text-green-700" />
+                                </span>
+                                <span className="text-sm text-green-700 font-medium">Saved</span>
+                            </div>
+                        )}
+
                         <Button
                             variant="outline"
                             onClick={() => setIsEditMode(!isEditMode)}
+                            className="ml-auto"
                         >
                             {isEditMode ? 'Preview' : 'Edit'}
                         </Button>
@@ -226,7 +241,8 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({uploadId}) => {
                             />
                         ) : (
                             <div className="flex-1 border p-2 rounded-lg overflow-auto">
-                                <Response>{currentMarkdown}</Response>
+                                {/* <Response>{currentMarkdown}</Response> */}
+                                <MarkdownRenderer content={currentMarkdown} className='markdown-custom'/>
                             </div>
                         )}
                     </div>
@@ -238,7 +254,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({uploadId}) => {
                 <Button onClick={handlePrev} disabled={currentIndex === 0}>
                     Previous
                 </Button>
-                <Button onClick={handleSave} disabled={currentItem.isSaved}>Save</Button>
+                <Button onClick={handleSave} >Save</Button>
                 <Button onClick={handleNext} disabled={currentIndex === items.length - 1 || !currentItem.isSaved}>
                     Next
                 </Button>
