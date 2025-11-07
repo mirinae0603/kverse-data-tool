@@ -186,13 +186,17 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ uploadId }) => {
             <p className="text-gray-600 text-lg">{error}</p>
         </div>
     );
+    
+    const tables = [...currentMarkdown.matchAll(/@table([\s\S]*?)@\/table/g)].map(m => m[1].trim());
+
+    const cleanedMarkdown = currentMarkdown.replace(/@table[\s\S]*?@\/table/g, "");
 
     return (
-        <div className="flex flex-col flex-1 gap-4 p-4">
+        <div className="flex flex-col flex-1 gap-4 p-4 min-w-0">
             {/* The flex container for image + markdown */}
-            <div className="flex flex-1 gap-4">
+            <div className="flex flex-1 gap-4 min-w-0">
                 {/* Left: Image */}
-                <div className="w-1/2 relative flex flex-col justify-center items-center bg-gray-100 p-4 rounded-lg">
+                <div className="w-1/2 relative flex flex-col justify-center items-center bg-gray-100 p-4 rounded-lg min-w-0">
                     {/* Skeleton placeholder */}
                     {!isImageLoaded && (
                         <Skeleton className="absolute inset-0 h-full w-full rounded shadow animate-pulse" />
@@ -210,7 +214,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ uploadId }) => {
                 </div>
 
                 {/* Right: Markdown editor / preview */}
-                <div className="w-1/2 flex flex-col gap-2">
+                <div className="w-1/2 flex flex-col gap-2 min-w-0">
                     {/* Toggle button */}
                     <div className="flex justify-end mb-2">
                         {currentItem.isSaved && (
@@ -242,13 +246,20 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ uploadId }) => {
                         ) : (
                             <div className="flex-1 border p-2 rounded-lg overflow-auto">
                                 {/* <Response>{currentMarkdown}</Response> */}
-                                <MarkdownRenderer content={currentMarkdown} className='markdown-custom'/>
+                                <MarkdownRenderer content={cleanedMarkdown} className='markdown-custom' />
                             </div>
                         )}
                     </div>
                 </div>
             </div>
-
+            <div className="w-5xl mx-auto">
+                {tables.length > 0 &&
+                    tables.map((table: any, i: number) => (
+                        <div key={i} className="w-full overflow-x-auto min-w-0 my-2">
+                            <MarkdownRenderer content={table} className="markdown-custom w-full" />
+                        </div>
+                    ))}
+            </div>
             {/* Navigation buttons */}
             <div className="flex gap-2 justify-end">
                 <Button onClick={handlePrev} disabled={currentIndex === 0}>

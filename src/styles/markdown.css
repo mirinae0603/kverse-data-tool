@@ -6,6 +6,11 @@
   color: inherit !important;
 }
 
+.markdown-custom table td,
+.markdown-custom table th {
+  background-color: #fff;
+}
+
 @media (max-width:600px) {
   .markdown-custom .control-float {
     float: none !important
