@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import './styles/markdown.css'
+import "katex/contrib/mhchem";
 import App from './App.tsx'
 import { Toaster } from './components/ui/sonner.tsx'
 
