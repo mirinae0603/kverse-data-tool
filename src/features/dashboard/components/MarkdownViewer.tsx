@@ -6,6 +6,9 @@ import { toast } from 'sonner';
 import { getMarkdown, saveMarkdown } from '@/api/dashboard.api';
 import { CheckCircle } from 'lucide-react';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { Controls } from './Controls';
+
 
 type MarkdownItem = {
     id: string;
@@ -62,11 +65,11 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ uploadId }) => {
                             if (!hasFetchedOnce) {
                                 setItems(mapped);
                                 const index = mapped.findIndex((item: any) => item.isSaved === false);
-                                setCurrentMarkdown(mapped[index].markdown);
+                                setCurrentMarkdown(mapped[index === -1 ? 0 : index].markdown);
                                 setLoading(false);
                                 setProcessing(false);
                                 hasFetchedOnce = true;
-                                setCurrentIndex(index);
+                                setCurrentIndex(index === -1 ? 0 : index);
                             } else {
                                 setItems((prevItems) => {
                                     const existingIds = new Set(prevItems.map((i) => i.id));
@@ -112,10 +115,6 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ uploadId }) => {
     const currentItem = items[currentIndex];
 
     const handleSave = async () => {
-        console.log(`Saved markdown for item ${currentItem.id}:`, currentMarkdown);
-        if (currentItem.isSaved) {
-            return;
-        }
         try {
             await saveMarkdown(uploadId, { image_url: currentItem.imageUrl, markdown: currentMarkdown });
             setItems((items: MarkdownItem[]) =>
@@ -186,7 +185,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ uploadId }) => {
             <p className="text-gray-600 text-lg">{error}</p>
         </div>
     );
-    
+
     const tables = [...currentMarkdown.matchAll(/@table([\s\S]*?)@\/table/g)].map(m => m[1].trim());
 
     const cleanedMarkdown = currentMarkdown.replace(/@table[\s\S]*?@\/table/g, "");
@@ -203,14 +202,30 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ uploadId }) => {
                     )}
 
                     {/* Actual image */}
-                    <img
-                        key={currentIndex}
-                        src={currentItem.imageUrl}
-                        alt={`Image ${currentItem.id}`}
-                        onLoad={() => { setIsImageLoaded(true) }}
-                        className={`max-w-full max-h-full object-contain rounded shadow flex-1 transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'
-                            }`}
-                    />
+
+
+                    <TransformWrapper
+                        initialScale={1}
+                        initialPositionX={200}
+                        initialPositionY={100}
+                    >
+                        {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
+                            <>
+                                <Controls />     
+                                <TransformComponent>
+                                    <img
+                                        key={currentIndex}
+                                        src={currentItem.imageUrl}
+                                        alt={`Image ${currentItem.id}`}
+                                        onLoad={() => { setIsImageLoaded(true) }}
+                                        className={`max-w-full max-h-full object-contain rounded shadow flex-1 transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'
+                                            }`}
+                                    />
+                                </TransformComponent>
+                            </>
+                        )}
+                    </TransformWrapper>
+
                 </div>
 
                 {/* Right: Markdown editor / preview */}
