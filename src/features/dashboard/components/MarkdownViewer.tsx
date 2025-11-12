@@ -209,21 +209,19 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ uploadId }) => {
                         initialPositionX={200}
                         initialPositionY={100}
                     >
-                        {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
-                            <>
-                                <Controls />     
-                                <TransformComponent>
-                                    <img
-                                        key={currentIndex}
-                                        src={currentItem.imageUrl}
-                                        alt={`Image ${currentItem.id}`}
-                                        onLoad={() => { setIsImageLoaded(true) }}
-                                        className={`max-w-full max-h-full object-contain rounded shadow flex-1 transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'
-                                            }`}
-                                    />
-                                </TransformComponent>
-                            </>
-                        )}
+                        <>
+                            <Controls />
+                            <TransformComponent>
+                                <img
+                                    key={currentIndex}
+                                    src={currentItem.imageUrl}
+                                    alt={`Image ${currentItem.id}`}
+                                    onLoad={() => setIsImageLoaded(true)}
+                                    className={`max-w-full max-h-full object-contain rounded shadow flex-1 transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'
+                                        }`}
+                                />
+                            </TransformComponent>
+                        </>
                     </TransformWrapper>
 
                 </div>
